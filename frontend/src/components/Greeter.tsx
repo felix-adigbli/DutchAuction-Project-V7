@@ -54,14 +54,14 @@ export function Greeter(): ReactElement {
   const context = useWeb3React<Provider>();
   const { library, active } = context;
   const [signer, setSigner] = useState<Signer>();
-  const [greeterContract, setGreeterContract] = useState<Contract>();
+  const [greeterContract, setGreeterContract] = useState<Contract | null>(null);
   const [dutchAuctionContract, setDutchAuctionContract] = useState<Contract>();
   const [greeterContractAddr, setGreeterContractAddr] = useState<string>('');
-  const [greeting, setGreeting] = useState<string>('');
+  const [greeting, setGreeting] = useState<string| null>(null);
   const [greetingInput, setGreetingInput] = useState<string>('');
-  const [reservePriceInput, setReservePriceInput] = useState<BigNumber>();
-  const [numBlocksAuctionOpenInput, setnumBlocksAuctionOpenInput] = useState<BigNumber>();
-  const [offerPriceDecrementInput, setofferPriceDecrementInput] = useState<BigNumber>();
+  const [reservePriceInput, setReservePriceInput] = useState<BigNumber | null>(null);
+  const [ƒ, setnumBlocksAuctionOpenInput] = useState<BigNumber| null>(null);
+  const [offerPriceDecrementInput, setofferPriceDecrementInput] = useState<BigNumber | null>(null);
   const [auctionLookupInput, setAuctionLookInput] = useState<string>('');
   const [lookupAuctionCurrentPrice, setlookupAuctionCurrentPrice] = useState<any>(null);
   const [bidAmmountInput, setBidAmountInput] = useState<string>();
@@ -101,15 +101,16 @@ export function Greeter(): ReactElement {
 
   function handleDeployContract(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
-
+    
     // only deploy the Greeter contract one time, when a signer is defined
     if (greeterContract || !signer) {
       return;
     }
 
+    setGreeterContract(null);
+    setGreeting(null);
+
     async function deployDuctAuctContract(signer: Signer): Promise<void> {
-
-
       const DutchAuction = new ethers.ContractFactory(
         DutchAuctionArtifact.abi,
         DutchAuctionArtifact.bytecode,
@@ -117,19 +118,16 @@ export function Greeter(): ReactElement {
       );
 
       try {
-
         const dutchAuctionContract = await DutchAuction.deploy(
           reservePriceInput,
-          numBlocksAuctionOpenInput,
+          ƒ,
           offerPriceDecrementInput
         );
+
         await dutchAuctionContract.deployed();
-
         // const greeting = await greeterContract.greet();
-
         setGreeterContract(dutchAuctionContract);
         setGreeting(dutchAuctionContract.address);
-
         //setGreeterContract(greeterContract);
         //setGreeting(greeting);
 
@@ -141,6 +139,11 @@ export function Greeter(): ReactElement {
         window.alert(
           'Error!' + (error && error.message ? `\n\n${error.message}` : '')
         );
+      } finally {
+        setReservePriceInput(BigNumber.from(' '));
+        setnumBlocksAuctionOpenInput(BigNumber.from(' '));
+        setofferPriceDecrementInput(BigNumber.from(' '));
+        setGreeterContract(null);
       }
     }
 
@@ -163,11 +166,13 @@ export function Greeter(): ReactElement {
     const reservePriceInputBigNumber = BigNumber.from(event.target.value);
     setReservePriceInput(reservePriceInputBigNumber);
   }
+  
   function handleNumBlockOpenInput(event: ChangeEvent<HTMLInputElement>): void {
     event.preventDefault();
     const numberOfBlockBigNumber = BigNumber.from(event.target.value);
     setnumBlocksAuctionOpenInput(numberOfBlockBigNumber);
   }
+
   function handleOfferPriceDecInput(event: ChangeEvent<HTMLInputElement>): void {
     event.preventDefault();
     const offerPriceDecInputBigNumber = BigNumber.from(event.target.value);
@@ -326,9 +331,9 @@ export function Greeter(): ReactElement {
         onChange={handleReservePriceInput}
         style={{ fontStyle: bidAmmountInput ? 'normal' : 'italic' }}
       ></StyledInput>
-      <StyledLabel htmlFor="numBlocksAuctionOpenInput">Number of Blocks Open</StyledLabel>
+      <StyledLabel htmlFor="ƒ">Number of Blocks Open</StyledLabel>
       <StyledInput
-        id="numBlocksAuctionOpenInput"
+        id="ƒ"
         type="text"
         placeholder={bidAmmountInput ? '' : 'Enter  Number of block open here'}
         onChange={handleNumBlockOpenInput}
@@ -413,7 +418,6 @@ export function Greeter(): ReactElement {
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
       </StyledGreetingDiv>
-
 
       <SectionDivider />
       <h1>Submit Bid Section</h1>
