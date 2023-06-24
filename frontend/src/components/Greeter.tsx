@@ -64,7 +64,7 @@ export function Greeter(): ReactElement {
   const [offerPriceDecrementInput, setofferPriceDecrementInput] = useState<BigNumber>();
   const [auctionLookupInput, setAuctionLookInput] = useState<string>('');
   const [lookupAuctionCurrentPrice, setlookupAuctionCurrentPrice] = useState(null);
-  const [bidAmmountInput, setBidAmountInput] = useState<BigNumber>();
+  const [bidAmmountInput, setBidAmountInput] = useState<string>();
   const [bidAddressInput, SetBidAddressInput] = useState<string>('');
   //const [auctionReservePrice, setAuctionReservePrice]  = useState<BigNumber>();
   let auctionReservePrice;
@@ -162,15 +162,18 @@ export function Greeter(): ReactElement {
 
   function handleReservePriceInput(event: ChangeEvent<HTMLInputElement>): void {
     event.preventDefault();
-    setReservePriceInput(event.target.value);
+    const reservePriceInputBigNumber = BigNumber.from(event.target.value);
+    setReservePriceInput(reservePriceInputBigNumber);
   }
   function handleNumBlockOpenInput(event: ChangeEvent<HTMLInputElement>): void {
     event.preventDefault();
-    setnumBlocksAuctionOpenInput(event.target.value);
+    const numberOfBlockBigNumber = BigNumber.from(event.target.value);
+    setnumBlocksAuctionOpenInput(numberOfBlockBigNumber);
   }
   function handleOfferPriceDecInput(event: ChangeEvent<HTMLInputElement>): void {
     event.preventDefault();
-    setofferPriceDecrementInput(event.target.value);
+    const offerPriceDecInputBigNumber = BigNumber.from(event.target.value);
+    setofferPriceDecrementInput(offerPriceDecInputBigNumber);
   }
 
   function handleBidAmountInput(event: ChangeEvent<HTMLInputElement>): void {
@@ -221,7 +224,7 @@ export function Greeter(): ReactElement {
 
   //****** */
 
-  handleBidSubmit
+  //handleBidSubmit
 
   function handleAuctionLookupSubmit(event: MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
@@ -231,8 +234,8 @@ export function Greeter(): ReactElement {
       window.alert('Greeting cannot be empty');
       return;
     }
-
-    const host = 'http://127.0.0.1:8545/'
+    const windowCopy: any = window;
+    const host = windowCopy.ethereum;
     const web3 = new Web3(host);
 
 
@@ -272,34 +275,45 @@ export function Greeter(): ReactElement {
   function handleBidSubmit(event: MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
 
-    const host = 'http://127.0.0.1:8545/'
+    const windowCopy: any = window;
+    const host = windowCopy.ethereum;
     const web3 = new Web3(host);
 
 
     // Create an instance of the smart contract using the ABI and address
     const contractInfo = new web3.eth.Contract(DutchAuctionArtifact.abi, bidAddressInput);
-     async function submitBid(): Promise<void> {
-      try {
-     
 
-      const placeBid = await contractInfo.methods.placeBid({value: bidAmmountInput }).call();
-    
-        window.alert('Bid Submited Successfully');
+    // Get the current Ethereum accounts from MetaMask
+    web3.eth.getAccounts()
+      .then(async ([senderAddress]) => {
+        // Specify the value to send in wei
+        //const valueToSend = '100000'; // 10 wei
 
-      } catch (error: any) {
-        if (error.message.includes('Bid has Expired')) {
-          console.log('Bid has expired');
-          window.alert('Bid has expired');
-        } else {
+        try {
+          // Call the contract function and send the transaction
+          const transaction = contractInfo.methods.placeBid().call({
+            from: senderAddress,
+            value: bidAmmountInput
+          });
+
+
+          // Wait for the transaction to be mined
+          const receipt = await transaction;
+
+          console.log('Transaction receipt:', receipt);
+          console.log('Transaction confirmed');
+        } catch (error: any) {
+          
+          console.error('Transaction error:', error);
           window.alert(
-            'Error!' + (error && error.message ? `\n\n${error.message}` : '')
-          );
+              'Error!' + (error && error.message ? `\n\n${error.message}` : '')
+          )
         }
-        
-      }
-    }
+      })
+      .catch((error) => {
+        console.error('Error retrieving accounts:', error);
+      });
 
-    submitBid();
 
   }
 
