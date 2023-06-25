@@ -60,19 +60,19 @@ export function Greeter(): ReactElement {
   const [greeting, setGreeting] = useState<string| null>(null);
   const [greetingInput, setGreetingInput] = useState<string>('');
   const [reservePriceInput, setReservePriceInput] = useState<BigNumber | null>(null);
-  const [ƒ, setnumBlocksAuctionOpenInput] = useState<BigNumber| null>(null);
+  const [numBlocksAuctionOpenInput, setnumBlocksAuctionOpenInput] = useState<BigNumber| null>(null);
   const [offerPriceDecrementInput, setofferPriceDecrementInput] = useState<BigNumber | null>(null);
   const [auctionLookupInput, setAuctionLookInput] = useState<string>('');
   const [lookupAuctionCurrentPrice, setlookupAuctionCurrentPrice] = useState<any>(null);
   const [bidAmmountInput, setBidAmountInput] = useState<string>();
-  const [bidAddressInput, SetBidAddressInput] = useState<string>('');
-  //const [auctionReservePrice, setAuctionReservePrice]  = useState<BigNumber>();
-  
+  const [bidAddressInput, SetBidAddressInput] = useState<string>('');  
   const [auctionReservePrice,  setAuctionReservePrice] = useState<any>('');
   const [auctionNumBlockOpen, setAuctionNumBlockOpen] = useState<any>('');
   const [auctionPriceDecrement, setAuctionPriceDecrement] = useState<any>('');
   const [auctionWiner, setAuctionWiner] = useState<any>('');
   const [auctionCurrentPrice, setActionCurrentPrice] = useState<any>('');
+
+  
 
   useEffect((): void => {
     if (!library) {
@@ -120,7 +120,7 @@ export function Greeter(): ReactElement {
       try {
         const dutchAuctionContract = await DutchAuction.deploy(
           reservePriceInput,
-          ƒ,
+          numBlocksAuctionOpenInput,
           offerPriceDecrementInput
         );
 
@@ -150,10 +150,10 @@ export function Greeter(): ReactElement {
     deployDuctAuctContract(signer);
   }
 
-  function handleGreetingChange(event: ChangeEvent<HTMLInputElement>): void {
-    event.preventDefault();
-    setGreetingInput(event.target.value);
-  }
+ // function handleGreetingChange(event: ChangeEvent<HTMLInputElement>): void {
+ //   event.preventDefault();
+  //  setGreetingInput(event.target.value);
+  //}
 
 
   function handleAuctionLookup(event: ChangeEvent<HTMLInputElement>): void {
@@ -190,40 +190,6 @@ export function Greeter(): ReactElement {
   }
 
 
-  function handleGreetingSubmit(event: MouseEvent<HTMLButtonElement>): void {
-    event.preventDefault();
-
-    if (!greeterContract) {
-      window.alert('Undefined greeterContract');
-      return;
-    }
-
-    if (!auctionLookupInput) {
-      window.alert('Greeting cannot be empty');
-      return;
-    }
-
-    async function submitGreeting(greeterContract: Contract): Promise<void> {
-      try {
-        const setGreetingTxn = await greeterContract.setGreeting(greetingInput);
-
-                await setGreetingTxn.wait();
-
-        const newGreeting = await greeterContract.greet();
-        window.alert(`Success!\n\nGreeting is now: ${newGreeting}`);
-
-        if (newGreeting !== greeting) {
-          setGreeting(newGreeting);
-        }
-      } catch (error: any) {
-        window.alert(
-          'Error!' + (error && error.message ? `\n\n${error.message}` : '')
-        );
-      }
-    }
-
-    submitGreeting(greeterContract);
-  }
 
   //****** */
 
@@ -237,10 +203,11 @@ export function Greeter(): ReactElement {
       window.alert('Greeting cannot be empty');
       return;
     }
+
+    
     const windowCopy: any = window;
     const host = windowCopy.ethereum;
     const web3 = new Web3(host);
-
 
     // Create an instance of the smart contract using the ABI and address
     const contractInfo = new web3.eth.Contract(DutchAuctionArtifact.abi, auctionLookupInput);
@@ -255,13 +222,12 @@ export function Greeter(): ReactElement {
        setAuctionPriceDecrement(await contractInfo.methods.offerPriceDecrement().call());
        setAuctionWiner(await contractInfo.methods.getBidWinner().call());
        setActionCurrentPrice(await contractInfo.methods.getCurrentPrice().call());
-       setlookupAuctionCurrentPrice('auctionCurrentPrice')
        console.log({auctionCurrentPrice});
        console.log ({auctionNumBlockOpen});
        console.log({auctionPriceDecrement});
        console.log({auctionReservePrice});
        console.log({auctionWiner});
-      //  window.alert(`currentPrice: ${auctionCurrentPrice} \n number of block open: ${auctionNumBlockOpen} \n Price Decrement: ${auctionPriceDecrement}\n Reserve Price: ${auctionReservePrice} \n Bid Winner: ${auctionWiner}`);
+       window.alert(`currentPrice: ${auctionCurrentPrice} \n number of block open: ${auctionNumBlockOpen} \n Price Decrement: ${auctionPriceDecrement}\n Reserve Price: ${auctionReservePrice} \n Bid Winner: ${auctionWiner}`);
    
       } catch (error: any) {
         window.alert(
@@ -297,6 +263,7 @@ export function Greeter(): ReactElement {
             value: bidAmmountInput
           });
 
+        getEvents();
 
           // Wait for the transaction to be mined
           const receipt = await transaction;
@@ -314,9 +281,47 @@ export function Greeter(): ReactElement {
       .catch((error) => {
         console.error('Error retrieving accounts:', error);
       });
-
+window.alert('Bid sunmiteed successfully');
 
   }
+
+  const windowCopy: any = window;
+    const host = windowCopy.ethereum;
+    const web3 = new Web3(host);
+
+    // Create an instance of the smart contract using the ABI and address
+    const contract = new web3.eth.Contract(DutchAuctionArtifact.abi, auctionLookupInput);
+
+    async function getEvents() {
+    let latest_block = await web3.eth.getBlockNumber();
+    let historical_block = latest_block - BigInt(10000); // you can also change the value to 'latest' if you have a upgraded rpc
+    console.log("latest: ", latest_block, "historical block: ", historical_block);
+    const dutchevents = await contract.getPastEvents('allEvents', {
+    fromBlock: 0,
+    toBlock: 'latest'
+ // same results as the optional callback above
+});
+    await getTransferDetails(dutchevents);
+};
+
+
+
+async function getTransferDetails(data_events: any[]) {
+  const web3 = new Web3();
+  for (let i = 0; i < data_events.length; i++) {
+    const from = data_events[i]['returnValues']['from'];
+    const to = data_events[i]['returnValues']['to'];
+    const amount = data_events[i]['returnValues']['amount'];
+    const converted_amount = web3.utils.fromWei(amount, 'Mwei');
+
+    if (parseFloat(converted_amount) > 0) {
+      console.log("From:", from, "- To:", to, "- Value:", converted_amount);
+    }
+  }
+}
+
+
+getEvents();
 
 
   //****** */
@@ -329,11 +334,11 @@ export function Greeter(): ReactElement {
         type="text"
         placeholder={bidAmmountInput ? '' : 'Enter Reserve Price here'}
         onChange={handleReservePriceInput}
-        style={{ fontStyle: bidAmmountInput ? 'normal' : 'italic' }}
+        style={{ fontStyle: bidAmmountInput ? 'normal' : 'italic' }} 
       ></StyledInput>
-      <StyledLabel htmlFor="ƒ">Number of Blocks Open</StyledLabel>
+      <StyledLabel htmlFor="numBlocksAuctionOpenInput">Number of Blocks Open</StyledLabel>
       <StyledInput
-        id="ƒ"
+        id="numBlocksAuctionOpenInput"
         type="text"
         placeholder={bidAmmountInput ? '' : 'Enter  Number of block open here'}
         onChange={handleNumBlockOpenInput}
@@ -397,24 +402,49 @@ export function Greeter(): ReactElement {
           {auctionLookupInput ? (
             auctionLookupInput
           ) : (
-              <em>{`<No Auction lookup yet>`}</em>
+              <em>{`<No Contract lookup yet>`}</em>
           )}
         </div>
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
         <StyledLabel>Reserve Price</StyledLabel>
-        <div>
-          {lookupAuctionCurrentPrice ?  (
-          <div>
-              Current Price: {auctionCurrentPrice}
-              Number of block open: {auctionNumBlockOpen}
-              Price Decrement: {auctionPriceDecrement}
-              Reserve Price: {auctionReservePrice}
-              Bid Winner: {auctionWiner}
-          </div>
-          )
-            : (<em>{`<No Auction lookup yet>`}</em>)}
-        </div>
+      <div>
+        {auctionReservePrice ? (
+          auctionReservePrice
+        ) : (
+          <em>{`<No Contract Lookup yet>`}</em>
+        )}
+      </div>
+        {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
+        <div></div>
+      <StyledLabel>Number of Block Open</StyledLabel>
+      <div>
+        {auctionNumBlockOpen ? (
+          auctionNumBlockOpen
+        ) : (
+          <em>{`<No Contract Lookup yet>`}</em>
+        )}
+      </div>
+        {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
+        <div></div>
+      <StyledLabel>Price Decrement</StyledLabel>
+      <div>
+        {auctionPriceDecrement ? (
+          auctionPriceDecrement
+        ) : (
+          <em>{`<No Contract Lookup yet>`}</em>
+        )}
+      </div>
+        {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
+        <div></div>
+      <StyledLabel>Current Price</StyledLabel>
+      <div>
+        {auctionCurrentPrice ? (
+          auctionCurrentPrice
+        ) : (
+          <em>{`<No Contract Lookup yet>`}</em>
+        )}
+      </div>
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
       </StyledGreetingDiv>
