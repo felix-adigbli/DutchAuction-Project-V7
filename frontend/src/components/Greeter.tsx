@@ -12,7 +12,8 @@ import DutchAuctionArtifact from '../artifacts/contracts/dutchauction.sol/DutchA
 import { Provider } from '../utils/provider';
 import { SectionDivider } from './SectionDivider';
 import React from 'react';
-import Web3 from 'web3';
+//import Web3 from 'web3';
+
 
 
 const StyledDeployContractButton = styled.button`
@@ -55,22 +56,22 @@ export function Greeter(): ReactElement {
   const { library, active } = context;
   const [signer, setSigner] = useState<Signer>();
   const [greeterContract, setGreeterContract] = useState<Contract | null>(null);
-  const [dutchAuctionContract, setDutchAuctionContract] = useState<Contract>();
+ // const [dutchAuctionContract, setDutchAuctionContract] = useState<Contract>();
   const [greeterContractAddr, setGreeterContractAddr] = useState<string>('');
-  const [greeting, setGreeting] = useState<string| null>(null);
-  const [greetingInput, setGreetingInput] = useState<string>('');
+ // const [greeting, setGreeting] = useState<string| null>(null);
+//  const [greetingInput, setGreetingInput] = useState<string>('');
   const [reservePriceInput, setReservePriceInput] = useState<BigNumber | null>(null);
   const [numBlocksAuctionOpenInput, setnumBlocksAuctionOpenInput] = useState<BigNumber| null>(null);
   const [offerPriceDecrementInput, setofferPriceDecrementInput] = useState<BigNumber | null>(null);
   const [auctionLookupInput, setAuctionLookInput] = useState<string>('');
-  const [lookupAuctionCurrentPrice, setlookupAuctionCurrentPrice] = useState<any>(null);
+ // const [lookupAuctionCurrentPrice, setlookupAuctionCurrentPrice] = useState<any>(null);
   const [bidAmmountInput, setBidAmountInput] = useState<string>();
   const [bidAddressInput, SetBidAddressInput] = useState<string>('');  
-  const [auctionReservePrice,  setAuctionReservePrice] = useState<any>('');
-  const [auctionNumBlockOpen, setAuctionNumBlockOpen] = useState<any>('');
-  const [auctionPriceDecrement, setAuctionPriceDecrement] = useState<any>('');
-  const [auctionWiner, setAuctionWiner] = useState<any>('');
-  const [auctionCurrentPrice, setActionCurrentPrice] = useState<any>('');
+ // const [auctionReservePrice,  setAuctionReservePrice] = useState<any>('');
+  //const [auctionNumBlockOpen, setAuctionNumBlockOpen] = useState<any>('');
+  //const [auctionPriceDecrement, setAuctionPriceDecrement] = useState<any>('');
+  //const [auctionWiner, setAuctionWiner] = useState<any>('');
+ // const [auctionCurrentPrice, setActionCurrentPrice] = useState<any>('');
 
   
 
@@ -82,7 +83,7 @@ export function Greeter(): ReactElement {
 
     setSigner(library.getSigner());
   }, [library]);
-
+/*
   useEffect((): void => {
     if (!greeterContract) {
       return;
@@ -98,7 +99,7 @@ export function Greeter(): ReactElement {
 
     getGreeting(greeterContract);
   }, [greeterContract, greeting]);
-
+*/
   function handleDeployContract(event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     
@@ -108,7 +109,7 @@ export function Greeter(): ReactElement {
     }
 
     setGreeterContract(null);
-    setGreeting(null);
+    //setGreeting(null);
 
     async function deployDuctAuctContract(signer: Signer): Promise<void> {
       const DutchAuction = new ethers.ContractFactory(
@@ -127,7 +128,7 @@ export function Greeter(): ReactElement {
         await dutchAuctionContract.deployed();
         // const greeting = await greeterContract.greet();
         setGreeterContract(dutchAuctionContract);
-        setGreeting(dutchAuctionContract.address);
+        //setGreeting(dutchAuctionContract.address);
         //setGreeterContract(greeterContract);
         //setGreeting(greeting);
 
@@ -193,8 +194,135 @@ export function Greeter(): ReactElement {
 
   //****** */
 
-  //handleBidSubmit
 
+//connect using ether.js
+
+async function sendContractRequest() {
+  // Check if MetaMask is installed
+  const windowCopy: any = window;
+  if (!windowCopy.ethereum) {
+    console.error('MetaMask is not installed.');
+    return;
+  }
+
+  // Request access to the user's MetaMask account
+  await windowCopy.ethereum.request({ method: 'eth_requestAccounts' });
+
+  // Connect to the Ethereum network using MetaMask
+  const provider = new ethers.providers.Web3Provider(windowCopy.ethereum);
+
+  // Get the signer from the provider
+  const signer = provider.getSigner();
+
+
+  // Create a new contract instance
+  const contractInfo =  new ethers.Contract(auctionLookupInput, DutchAuctionArtifact.abi, signer);
+  //const contractInfo = new ethers.Contract(auctionLookupInput, DutchAuctionArtifact.abi);
+
+
+async function getCurrentPrice(): Promise<any> {
+  try {
+    const auctionCurrentPrice = await contractInfo.getCurrentPrice();
+    return auctionCurrentPrice.data;
+  } catch (error) {
+    console.error('Error calling contract method:', error);
+    throw error;
+  }
+}
+
+  try {
+    // Call a contract method that doesn't modify state (view/pure)
+  
+
+    // Process the result
+    //console.log('Contract method result:', result);
+    const auctionReservePrice = await contractInfo.reservePrice();
+     //setAuctionReservePrice(await contractInfo.reservePrice());
+     //setAuctionNumBlockOpen(await contractInfo.numBlocksAuctionOpen());   
+     const auctionNumBlockOpen =  await contractInfo.numBlocksAuctionOpen();
+      //setAuctionPriceDecrement(await contractInfo.offerPriceDecrement());
+      const auctionPriceDecrement = await contractInfo.offerPriceDecrement();
+      //setAuctionWiner(await contractInfo.getBidWinner());
+      const auctionWiner = await contractInfo.getBidWinner();
+      //setActionCurrentPrice(await contractInfo.getCurrentPrice());
+      const auctionCurrentPrice = parseInt(await getCurrentPrice());
+      console.log({auctionCurrentPrice});
+      console.log ({auctionNumBlockOpen});
+      console.log({auctionPriceDecrement});
+      console.log({auctionReservePrice});
+      console.log({auctionWiner});
+      //window.alert(`return result  ${await contractInfo.reservePrice()}` )
+      
+      window.alert(`currentPrice: ${auctionCurrentPrice} \n number of block open: ${auctionNumBlockOpen} \n Price Decrement: ${auctionPriceDecrement}\n Reserve Price: ${auctionReservePrice} \n Bid Winner: ${auctionWiner}`);
+   
+    
+    // Send a transaction to a contract method that modifies state
+   /* const transaction = await contract.yourContractMethod(arg1, arg2)
+      .connect(signer)
+      .send();
+
+    // Wait for the transaction to be mined
+    const receipt = await transaction.wait();
+    
+    // Process the receipt
+    console.log('Transaction receipt:', receipt);
+    */
+  } catch (error: any) {
+          
+  console.error('Transaction error:', error);
+  window.alert('Error!' + (error && error.message ? `\n\n${error.message}` : '')
+          )
+        }
+}
+
+async function bidRequest() {
+  // Check if MetaMask is installed
+  const windowCopy: any = window;
+  if (!windowCopy.ethereum) {
+    console.error('MetaMask is not installed.');
+    return;
+  }
+
+  // Request access to the user's MetaMask account
+  await windowCopy.ethereum.request({ method: 'eth_requestAccounts' });
+
+  // Connect to the Ethereum network using MetaMask
+  const provider = new ethers.providers.Web3Provider(windowCopy.ethereum);
+
+  // Get the signer from the provider
+  const signer = provider.getSigner();
+
+   // Create a new contract instance
+  const contractInfo =  new ethers.Contract(bidAddressInput, DutchAuctionArtifact.abi, signer);
+  //const contractInfo = new ethers.Contract(auctionLookupInput, DutchAuctionArtifact.abi);
+
+  try {
+    const transaction = await contractInfo.placeBid({value:bidAmmountInput});
+    
+  /* const transaction = await contract.yourContractMethod(arg1, arg2)
+      .connect(signer)
+      .send();*/
+
+    // Wait for the transaction to be mined
+    const receipt = await transaction.wait();
+    
+    // Process the receipt
+    console.log('Transaction receipt:', receipt);
+    window.alert(`Transaction Successfull. Bidwinner!`)
+    
+  } catch (error: any) {
+          
+  console.error('Transaction error:', error);
+  window.alert('Error!' + (error && error.message ? `\n\n${error.message}` : '')
+          )
+        }
+}
+// Call the function to send the contract request
+//sendContractRequest();
+
+
+  //handleBidSubmit
+/*
   function handleAuctionLookupSubmit(event: MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
 
@@ -238,6 +366,9 @@ export function Greeter(): ReactElement {
 
     getAuctionInfo();
   }
+
+
+
 
   function handleBidSubmit(event: MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
@@ -293,9 +424,6 @@ window.alert('Bid sunmiteed successfully');
     const contract = new web3.eth.Contract(DutchAuctionArtifact.abi, auctionLookupInput);
 
     async function getEvents() {
-    let latest_block = await web3.eth.getBlockNumber();
-    let historical_block = latest_block - BigInt(10000); // you can also change the value to 'latest' if you have a upgraded rpc
-    console.log("latest: ", latest_block, "historical block: ", historical_block);
     const dutchevents = await contract.getPastEvents('allEvents', {
     fromBlock: 0,
     toBlock: 'latest'
@@ -319,9 +447,9 @@ async function getTransferDetails(data_events: any[]) {
     }
   }
 }
+*/
 
-
-getEvents();
+//getEvents();
 
 
   //****** */
@@ -392,9 +520,9 @@ getEvents();
             cursor: !active || !auctionLookupInput ? 'not-allowed' : 'pointer',
             borderColor: !active || !auctionLookupInput ? 'unset' : 'blue'
           }}
-          onClick={handleAuctionLookupSubmit}
+          onClick={sendContractRequest}
         >
-          Submit
+          Submit Lookup
         </StyledButton>
 
         <StyledLabel>Contract Address</StyledLabel>
@@ -407,44 +535,16 @@ getEvents();
         </div>
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
-        <StyledLabel>Reserve Price</StyledLabel>
-      <div>
-        {auctionReservePrice ? (
-          auctionReservePrice
-        ) : (
-          <em>{`<No Contract Lookup yet>`}</em>
-        )}
-      </div>
+
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
-      <StyledLabel>Number of Block Open</StyledLabel>
-      <div>
-        {auctionNumBlockOpen ? (
-          auctionNumBlockOpen
-        ) : (
-          <em>{`<No Contract Lookup yet>`}</em>
-        )}
-      </div>
+
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
-      <StyledLabel>Price Decrement</StyledLabel>
-      <div>
-        {auctionPriceDecrement ? (
-          auctionPriceDecrement
-        ) : (
-          <em>{`<No Contract Lookup yet>`}</em>
-        )}
-      </div>
+
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
-      <StyledLabel>Current Price</StyledLabel>
-      <div>
-        {auctionCurrentPrice ? (
-          auctionCurrentPrice
-        ) : (
-          <em>{`<No Contract Lookup yet>`}</em>
-        )}
-      </div>
+
         {/* empty placeholder div below to provide empty first row, 3rd col div for a 2x3 grid */}
         <div></div>
       </StyledGreetingDiv>
@@ -473,7 +573,7 @@ getEvents();
           cursor: !active || !bidAmmountInput ? 'not-allowed' : 'pointer',
           borderColor: !active || bidAmmountInput ? 'unset' : 'blue'
         }}
-        onClick={handleBidSubmit}
+        onClick={bidRequest}
       >
         Submit Bid
       </StyledButton>
